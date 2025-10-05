@@ -6,6 +6,15 @@ import { secret } from "encore.dev/config";
 
 const jwtSecret = secret("JWTSecret");
 
+function getJWTSecret(): string {
+  try {
+    return jwtSecret();
+  } catch (error) {
+    console.warn("JWTSecret not configured, using fallback. This should only happen in development.");
+    return process.env.JWT_SECRET || "development-secret-change-in-production-12345";
+  }
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -59,12 +68,12 @@ export const login = api<LoginRequest, LoginResponse>(
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
+      {
         userId: user.id,
         email: user.email,
         premiumTier: user.premium_tier
       },
-      jwtSecret(),
+      getJWTSecret(),
       { expiresIn: "7d" }
     );
 

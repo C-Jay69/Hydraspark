@@ -16,6 +16,21 @@ You also need to have bun installed for package management. If you don't have bu
 npm install -g bun
 ```
 
+## Configuration
+
+### Required Secrets
+
+Before running the application, you need to configure secrets. See [SECRETS.md](./SECRETS.md) for detailed instructions.
+
+For local development, you can use the fallback values, but for production deployment, you MUST configure:
+- `JWTSecret` - Required for authentication
+- `SentryDSN` - Optional for error monitoring
+
+```bash
+# Set development secrets
+encore secret set --type dev JWTSecret
+```
+
 ## Running the Application
 
 ### Backend Setup
@@ -25,7 +40,12 @@ npm install -g bun
    cd backend
    ```
 
-2. Start the Encore development server:
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the Encore development server:
    ```bash
    encore run
    ```
