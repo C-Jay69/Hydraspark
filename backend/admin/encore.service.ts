@@ -1,4 +1,4 @@
 
 import { Service } from '@encore.dev/encore';
 
-export default new Service('admin');
+export default new Service('admin', {});

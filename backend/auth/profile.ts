@@ -1,3 +1,4 @@
+
 import { api, APIError } from "encore.dev/api";
 import { authDB } from "./db";
 
@@ -29,9 +30,8 @@ export interface ProfileResponse {
 }
 
 // Gets the current user's profile.
-export const getProfile = api<{ userId: string }, ProfileResponse>(
-  { expose: true, method: "GET", path: "/auth/profile/:userId" },
-  async ({ userId }) => {
+export const getProfile = api.v1.get("/auth/profile/:userId",
+  async ({ userId } : { userId: string }): Promise<ProfileResponse> => {
     const user = await authDB.queryRow<{
       id: string;
       email: string;
@@ -78,48 +78,45 @@ export const getProfile = api<{ userId: string }, ProfileResponse>(
 );
 
 // Updates the current user's profile.
-export const updateProfile = api<UpdateProfileRequest & { userId: string }, ProfileResponse>(
-  { expose: true, method: "PUT", path: "/auth/profile/:userId" },
+export const updateProfile = api.v1.put<UpdateProfileRequest & { userId: string }, ProfileResponse>("/auth/profile/:userId",
   async ({ userId, ...updates }) => {
     const updateFields: string[] = [];
     const values: any[] = [];
-    let paramIndex = 1;
 
     if (updates.bio !== undefined) {
-      updateFields.push(`bio = $${paramIndex++}`);
+      updateFields.push(`bio = $${values.length + 1}`);
       values.push(updates.bio);
     }
     if (updates.interests !== undefined) {
-      updateFields.push(`interests = $${paramIndex++}`);
+      updateFields.push(`interests = $${values.length + 1}`);
       values.push(updates.interests);
     }
     if (updates.modes !== undefined) {
-      updateFields.push(`modes = $${paramIndex++}`);
+      updateFields.push(`modes = $${values.length + 1}`);
       values.push(updates.modes);
     }
     if (updates.city !== undefined) {
-      updateFields.push(`city = $${paramIndex++}`);
+      updateFields.push(`city = $${values.length + 1}`);
       values.push(updates.city);
     }
     if (updates.locationLat !== undefined && updates.locationLng !== undefined) {
-      updateFields.push(`location_lat = $${paramIndex++}`, `location_lng = $${paramIndex++}`);
+      updateFields.push(`location_lat = $${values.length + 1}`, `location_lng = $${values.length + 2}`);
       values.push(updates.locationLat, updates.locationLng);
     }
     if (updates.vibeAnswers !== undefined) {
-      updateFields.push(`vibe_answers = $${paramIndex++}`);
+      updateFields.push(`vibe_answers = $${values.length + 1}`);
       values.push(JSON.stringify(updates.vibeAnswers));
     }
 
-    updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
-    values.push(userId);
-
-    if (updateFields.length === 1) { // Only timestamp update
+    if (updateFields.length === 0) { 
       throw APIError.invalidArgument("No fields to update");
     }
+    
+    updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
 
-    await authDB.rawExec(
-      `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${paramIndex}`,
-      ...values
+    await authDB.query(
+      `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${values.length + 1}`,
+      ...values, userId
     );
 
     return getProfile({ userId });
@@ -127,15 +124,14 @@ export const updateProfile = api<UpdateProfileRequest & { userId: string }, Prof
 );
 
 // Gets all vibe questions for profile setup.
-export const getVibeQuestions = api<void, { questions: Array<{
-  id: number;
-  question: string;
-  options: string[];
-  category: string;
-}> }>(
-  { expose: true, method: "GET", path: "/auth/vibe-questions" },
-  async () => {
-    const questions = await authDB.queryAll<{
+export const getVibeQuestions = api.v1.get("/auth/vibe-questions",
+  async (): Promise<{ questions: Array<{
+    id: number;
+    question: string;
+    options: string[];
+    category: string;
+  }> }> => {
+    const questions = await authDB.query<{
       id: number;
       question: string;
       options: string[];

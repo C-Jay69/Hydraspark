@@ -1,6 +1,6 @@
 
 import { api } from "encore.dev/api";
-import { authDB } from "../db";
+import { authDB } from "../auth/db";
 
 interface MakeAdminRequest {
   email: string;
@@ -8,7 +8,7 @@ interface MakeAdminRequest {
 
 // This is a temporary endpoint to grant admin privileges.
 // It should be removed after the initial admin user is set up.
-export const makeAdmin = api<MakeAdminRequest, { status: string }>({
+export const makeAdmin = api.v1<MakeAdminRequest, { status: string }>({
   expose: true,
   method: "POST",
   path: "/admin/make-admin",

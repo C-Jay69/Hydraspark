@@ -23,12 +23,11 @@ export interface RegisterResponse {
 }
 
 // Registers a new user account.
-export const register = api<RegisterRequest, RegisterResponse>(
+export const register = api.v1<RegisterRequest, RegisterResponse>(
   {
     expose: true,
     method: "POST",
     path: "/auth/register",
-    cors: ["*"]
   },
   async (req) => {
     // Validate email format
@@ -43,7 +42,7 @@ export const register = api<RegisterRequest, RegisterResponse>(
     }
 
     // Check if user already exists
-    const existingUser = await authDB.queryOne`
+    const existingUser = await authDB.queryRow`
       SELECT id FROM users WHERE email = ${req.email}
     `;
     if (existingUser) {
@@ -54,12 +53,11 @@ export const register = api<RegisterRequest, RegisterResponse>(
     const hashedPassword = await bcrypt.hash(req.password, 10);
 
     // Insert new user into the database
-    const { rows } = await authDB.query`
-      INSERT INTO users (email, password, first_name, last_name, date_of_birth, gender, phone_number)
+    const user = await authDB.queryRow`
+      INSERT INTO users (email, password_hash, first_name, last_name, date_of_birth, gender, phone)
       VALUES (${req.email}, ${hashedPassword}, ${req.firstName}, ${req.lastName}, ${req.dateOfBirth}, ${req.gender}, ${req.phone})
       RETURNING id, email, first_name, last_name
     `;
-    const user = rows[0];
 
     return {
       user: {

@@ -16,15 +16,14 @@ interface LoginResponse {
 }
 
 // Handles user login.
-export const login = api<LoginRequest, LoginResponse>(
+export const login = api.v1<LoginRequest, LoginResponse>(
   {
     expose: true,
     method: "POST",
     path: "/auth/login",
-    cors: ["*"] // Allow requests from any origin
   },
   async ({ email, password }) => {
-    const user = await authDB.queryOne`
+    const user = await authDB.queryRow`
       SELECT id, password, is_active FROM users WHERE email = ${email}
     `;
 

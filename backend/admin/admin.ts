@@ -1,7 +1,7 @@
 
-import { api } from '@encore.dev/encore';
-import { auth } from '@encore.dev/auth';
-import { db } from '../auth/db';
+import { api } from 'encore.dev/api';
+import { auth } from 'encore.dev/auth';
+import { authDB } from '../auth/db';
 
 interface UserStats {
   totalUsers: number;
@@ -13,7 +13,7 @@ export const getUserStats = api.v1({
   async handler() {
     const { userID } = auth.ctx();
 
-    const user = await db.queryOne`
+    const user = await authDB.queryOne`
       SELECT is_admin FROM users WHERE id = ${userID}
     `;
 
@@ -21,7 +21,7 @@ export const getUserStats = api.v1({
       throw new Error('Unauthorized');
     }
 
-    const result = await db.queryOne`
+    const result = await authDB.queryOne`
       SELECT count(*) as "totalUsers" FROM users
     `;
 

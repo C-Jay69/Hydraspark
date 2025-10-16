@@ -1,20 +1,17 @@
 
-import { api } from '@encore.dev/encore';
-import { auth } from '@encore.dev/auth';
-import { db } from '../auth/db';
+import { api } from 'encore.dev/api';
+import { auth } from 'encore.dev/auth';
+import { authDB } from '../auth/db';
 
-// Protect all endpoints in this file
-api.middleware(async (req, next) => {
+const checkAdmin = async () => {
   const { userID } = auth.ctx();
-  // Ensure the user is an admin
-  const user = await db.queryOne`
+  const user = await authDB.queryOne`
     SELECT is_admin FROM users WHERE id = ${userID}
   `;
   if (!user || !user.is_admin) {
     throw new Error('Unauthorized: Admin access required');
   }
-  return next(req);
-});
+};
 
 interface User {
   id: string;
@@ -30,22 +27,25 @@ interface ListUsersResponse {
   count: number;
 }
 
-//encore:api public v1 path=/admin/users
-export async function listUsers(query: { limit: number; offset: number }): Promise<ListUsersResponse> {
-  const [users, countResult] = await Promise.all([
-    db.query`
-      SELECT id, email, name, is_admin, is_active, created_at
-      FROM users
-      ORDER BY created_at DESC
-      LIMIT ${query.limit} OFFSET ${query.offset}
-    `,
-    db.queryOne`SELECT count(*) FROM users`
-  ]);
-  return { 
-    users: users as User[],
-    count: countResult.count,
-  };
-}
+export const listUsers = api.v1.get('/admin/users', {
+  auth: true,
+  async handler(query: { limit: number; offset: number }): Promise<ListUsersResponse> {
+    await checkAdmin();
+    const [users, countResult] = await Promise.all([
+      authDB.query`
+        SELECT id, email, name, is_admin, is_active, created_at
+        FROM users
+        ORDER BY created_at DESC
+        LIMIT ${query.limit} OFFSET ${query.offset}
+      `,
+      authDB.queryOne`SELECT count(*) FROM users`
+    ]);
+    return { 
+      users: users as User[],
+      count: countResult.count,
+    };
+  }
+});
 
 
 interface UpdateUserParams {
@@ -54,31 +54,44 @@ interface UpdateUserParams {
   isActive?: boolean;
 }
 
-//encore:api public v1 path=/admin/users/:userID method=PATCH
-export async function updateUser(params: UpdateUserParams): Promise<{ success: boolean }> {
-  const user = await db.queryOne`SELECT id FROM users WHERE id = ${params.userID}`;
-  if (!user) {
-    throw new Error('User not found');
-  }
+export const updateUser = api.v1.patch('/admin/users/:userID', {
+  auth: true,
+  async handler(params: UpdateUserParams): Promise<{ success: boolean }> {
+    await checkAdmin();
+    const user = await authDB.queryOne`SELECT id FROM users WHERE id = ${params.userID}`;
+    if (!user) {
+      throw new Error('User not found');
+    }
 
-  // Dynamically build the update query
-  const updates: any = {};
-  if (params.isAdmin !== undefined) updates.is_admin = params.isAdmin;
-  if (params.isActive !== undefined) updates.is_active = params.isActive;
+    const updates: string[] = [];
+    const queryParams: any[] = [];
+
+    if (params.isAdmin !== undefined) {
+        updates.push('is_admin = $1');
+        queryParams.push(params.isAdmin);
+    }
+
+    if (params.isActive !== undefined) {
+        updates.push('is_active = $2');
+        queryParams.push(params.isActive);
+    }
 
   if (Object.keys(updates).length > 0) {
-    await db.query`
-      UPDATE users
-      SET ${db.update(updates)}
-      WHERE id = ${params.userID}
-    `;
+      await authDB.query(
+          `UPDATE users SET ${updates.join(', ')} WHERE id = $3`,
+          ...queryParams, params.userID
+      );
   }
 
-  return { success: true };
-}
+    return { success: true };
+  }
+});
 
-//encore:api public v1 path=/admin/users/:userID method=DELETE
-export async function deleteUser({ userID }: { userID: string }): Promise<{ success: boolean }> {
-  await db.query`DELETE FROM users WHERE id = ${userID}`;
-  return { success: true };
-}
+export const deleteUser = api.v1.delete('/admin/users/:userID', {
+  auth: true,
+  async handler({ userID }: { userID: string }): Promise<{ success: boolean }> {
+    await checkAdmin();
+    await authDB.query`DELETE FROM users WHERE id = ${userID}`;
+    return { success: true };
+  }
+});
