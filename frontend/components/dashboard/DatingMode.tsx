@@ -1,21 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart, X, Star, Zap } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Heart, X, Star, Zap, MessageSquare } from 'lucide-react';
 import { useBackend } from '../../hooks/useBackend';
+import MatchList from './MatchList';
 
 export default function DatingMode() {
   const [currentProfile, setCurrentProfile] = useState<any>(null);
+  const [view, setView] = useState<'swipe' | 'matches'>('swipe');
   const { call } = useBackend();
 
   useEffect(() => {
-    const fetchRecommendations = async () => {
-      const { recommendations } = await call('matching.recommendations');
-      setCurrentProfile(recommendations[0]);
-    };
-    fetchRecommendations();
-  }, [call]);
+    if (view === 'swipe') {
+      const fetchRecommendations = async () => {
+        const { recommendations } = await call('matching.recommendations');
+        setCurrentProfile(recommendations[0]);
+      };
+      fetchRecommendations();
+    }
+  }, [call, view]);
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     await call('matching.swipe', { direction, profileId: currentProfile.id });
@@ -23,12 +27,35 @@ export default function DatingMode() {
     setCurrentProfile(recommendations[0]);
   };
 
+  const handleSuperLike = async () => {
+    await call('matching.superLike', { profileId: currentProfile.id });
+    const { recommendations } = await call('matching.recommendations');
+    setCurrentProfile(recommendations[0]);
+  };
+
+  if (view === 'matches') {
+    return (
+      <div>
+        <div className="flex justify-start mb-4">
+            <Button onClick={() => setView('swipe')}>Back to Swiping</Button>
+        </div>
+        <MatchList />
+      </div>
+    );
+  }
+
   if (!currentProfile) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className="max-w-md mx-auto">
+        <div className="flex justify-end mb-4">
+            <Button onClick={() => setView('matches')}>
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Matches
+            </Button>
+        </div>
       <Card className="relative overflow-hidden">
         <div className="aspect-[3/4] bg-gradient-to-b from-gray-300 to-gray-500 relative">
           <img
@@ -69,6 +96,14 @@ export default function DatingMode() {
           onClick={() => handleSwipe('left')}
         >
           <X className="h-6 w-6 text-red-600" />
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-16 h-16 rounded-full border-blue-200 hover:bg-blue-50"
+          onClick={handleSuperLike}
+        >
+          <Star className="h-6 w-6 text-blue-600" />
         </Button>
         <Button
           size="lg"

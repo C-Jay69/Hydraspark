@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,8 @@ import DatingMode from '../components/dashboard/DatingMode';
 import FriendMode from '../components/dashboard/FriendMode';
 import SafetyMode from '../components/dashboard/SafetyMode';
 import ProfileSettings from '../components/dashboard/ProfileSettings';
+import GroupList from '../components/community/GroupList';
+import EventManagement from '../components/events/EventManagement';
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -107,7 +110,7 @@ function Dashboard() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="dating" className="flex items-center gap-2">
               <Heart className="h-4 w-4" />
               Dating
@@ -115,6 +118,14 @@ function Dashboard() {
             <TabsTrigger value="friend" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Friends
+            </TabsTrigger>
+            <TabsTrigger value="community" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Community
+            </TabsTrigger>
+            <TabsTrigger value="events" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Events
             </TabsTrigger>
             <TabsTrigger value="safety" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
@@ -132,6 +143,14 @@ function Dashboard() {
 
           <TabsContent value="friend" className="space-y-6">
             <FriendMode />
+          </TabsContent>
+
+          <TabsContent value="community" className="space-y-6">
+            <GroupList />
+          </TabsContent>
+
+          <TabsContent value="events" className="space-y-6">
+            <EventManagement />
           </TabsContent>
 
           <TabsContent value="safety" className="space-y-6">

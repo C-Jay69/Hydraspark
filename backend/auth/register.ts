@@ -1,3 +1,4 @@
+
 import { api, APIError } from "encore.dev/api";
 import { authDB } from "./db";
 import bcrypt from "bcryptjs";
@@ -23,7 +24,12 @@ export interface RegisterResponse {
 
 // Registers a new user account.
 export const register = api<RegisterRequest, RegisterResponse>(
-  { expose: true, method: "POST", path: "/auth/register" },
+  {
+    expose: true,
+    method: "POST",
+    path: "/auth/register",
+    cors: ["*"]
+  },
   async (req) => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -36,41 +42,24 @@ export const register = api<RegisterRequest, RegisterResponse>(
       throw APIError.invalidArgument("Password must be at least 8 characters");
     }
 
-    // Validate age (must be 18+)
-    const birthDate = new Date(req.dateOfBirth);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    if (age < 18) {
-      throw APIError.invalidArgument("Must be 18 or older to register");
-    }
-
     // Check if user already exists
-    const existingUser = await authDB.queryRow`
+    const existingUser = await authDB.queryOne`
       SELECT id FROM users WHERE email = ${req.email}
     `;
     if (existingUser) {
-      throw APIError.alreadyExists("User with this email already exists");
+      throw APIError.alreadyExists("A user with this email already exists");
     }
 
-    // Hash password
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(req.password, saltRounds);
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(req.password, 10);
 
-    // Create user
-    const user = await authDB.queryRow<{
-      id: string;
-      email: string;
-      first_name: string;
-      last_name: string;
-    }>`
-      INSERT INTO users (email, password_hash, first_name, last_name, date_of_birth, gender, phone)
-      VALUES (${req.email}, ${passwordHash}, ${req.firstName}, ${req.lastName}, ${req.dateOfBirth}, ${req.gender}, ${req.phone})
+    // Insert new user into the database
+    const { rows } = await authDB.query`
+      INSERT INTO users (email, password, first_name, last_name, date_of_birth, gender, phone_number)
+      VALUES (${req.email}, ${hashedPassword}, ${req.firstName}, ${req.lastName}, ${req.dateOfBirth}, ${req.gender}, ${req.phone})
       RETURNING id, email, first_name, last_name
     `;
-
-    if (!user) {
-      throw APIError.internal("Failed to create user");
-    }
+    const user = rows[0];
 
     return {
       user: {

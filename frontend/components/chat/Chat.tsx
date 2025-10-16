@@ -66,14 +66,16 @@ export default function Chat({ recipient }) {
                 <ScrollArea className="h-full" ref={scrollAreaRef}>
                     <div className="space-y-4">
                         {messages.map((msg) => (
-                            <Message key={msg.id} message={msg} isMe={msg.senderId === recipient.id} />
+                            <Message key={msg.id} message={msg} isMe={msg.senderId !== recipient.id} />
                         ))}
                     </div>
                 </ScrollArea>
             </div>
             <div className="p-4 border-t">
-                <div className="flex space-x-2">
-                    {/* Icebreaker suggestions */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                    <TwoTruthsOneLie onSelect={handleIcebreakerSelect} />
+                    <WouldYouRather onSelect={handleIcebreakerSelect} />
+                    <QuickQuestions onSelect={handleIcebreakerSelect} />
                 </div>
                 <form onSubmit={handleSendMessage} className="flex space-x-2">
                     <Input
