@@ -1,6 +1,7 @@
 
 import { api } from "encore.dev/api";
-import { CreateSwipe, GetMatches, GetRecommendations } from "./matching";
+import { discover as GetRecommendations } from "./discover";
+import { swipe as CreateSwipe, getMatches as GetMatches } from "./swipe";
 
 export const matchingService = api({
   auth: true,

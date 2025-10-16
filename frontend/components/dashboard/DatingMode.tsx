@@ -9,27 +9,27 @@ import MatchList from './MatchList';
 export default function DatingMode() {
   const [currentProfile, setCurrentProfile] = useState<any>(null);
   const [view, setView] = useState<'swipe' | 'matches'>('swipe');
-  const { call } = useBackend();
+  const backend = useBackend();
 
   useEffect(() => {
     if (view === 'swipe') {
       const fetchRecommendations = async () => {
-        const { recommendations } = await call('matching.recommendations');
+        const { recommendations } = await backend('matching.recommendations');
         setCurrentProfile(recommendations[0]);
       };
       fetchRecommendations();
     }
-  }, [call, view]);
+  }, [backend, view]);
 
   const handleSwipe = async (direction: 'left' | 'right') => {
-    await call('matching.swipe', { direction, profileId: currentProfile.id });
-    const { recommendations } = await call('matching.recommendations');
+    await backend('matching.swipe', { direction, profileId: currentProfile.id });
+    const { recommendations } = await backend('matching.recommendations');
     setCurrentProfile(recommendations[0]);
   };
 
   const handleSuperLike = async () => {
-    await call('matching.superLike', { profileId: currentProfile.id });
-    const { recommendations } = await call('matching.recommendations');
+    await backend('matching.superLike', { profileId: currentProfile.id });
+    const { recommendations } = await backend('matching.recommendations');
     setCurrentProfile(recommendations[0]);
   };
 
