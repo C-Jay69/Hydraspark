@@ -6,5 +6,9 @@
   "workspaces": [
     "backend",
     "frontend"
-  ]
+  ],
+  "scripts": {
+    "start": "bun --bun run backend/run.ts",
+    "build": "bun build ./frontend/index.html --outdir ./dist"
+  }
 }

@@ -1,30 +1,152 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, MapPin, Phone, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Shield, MapPin, Phone, Clock, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import AddTrustedContactForm from './AddTrustedContactForm';
+import CheckInForm from './CheckInForm';
+
+// Define the type for a trusted contact, including the ID
+interface TrustedContact {
+  id: string;
+  name: string;
+  phone: string;
+  verified: boolean;
+}
+
+// Define the type for a check-in, ensuring endTime is a string as returned by the API
+interface CheckIn {
+  location: string;
+  endTime: string;
+}
 
 export default function SafetyMode() {
-  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [isAddingContact, setIsAddingContact] = useState(false);
   const safetyScore = 25;
-  const trustedContacts = [
-    { name: 'Mom', phone: '+1-555-0123', verified: true },
-    { name: 'Best Friend Sarah', phone: '+1-555-0456', verified: true }
-  ];
+  const [trustedContacts, setTrustedContacts] = useState<TrustedContact[]>([]);
+
+  // Fetch initial data for trusted contacts and check-in status
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        // Fetch trusted contacts
+        const contactsResponse = await fetch('/api/safety/trusted-contacts');
+        if (contactsResponse.ok) {
+          const data = await contactsResponse.json();
+          setTrustedContacts(data.contacts);
+        } else {
+          console.error('Failed to fetch trusted contacts');
+        }
+
+        // Fetch check-in status
+        const checkInResponse = await fetch('/api/safety/check-in');
+        if (checkInResponse.ok) {
+          const data = await checkInResponse.json();
+          if (data.checkIn) {
+            setCheckIn(data.checkIn);
+          }
+        } else {
+          console.error('Failed to fetch check-in status');
+        }
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
 
   const handlePanicButton = () => {
-    // This would trigger emergency alerts
     alert('Emergency alert sent to trusted contacts!');
   };
 
-  const handleCheckIn = () => {
-    setIsCheckedIn(!isCheckedIn);
+  // Handle starting a check-in
+  const handleStartCheckIn = async (location: string, duration: number) => {
+    try {
+      const response = await fetch('/api/safety/check-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ location, duration }),
+      });
+
+      if (response.ok) {
+        const newCheckIn = await response.json();
+        setCheckIn(newCheckIn);
+        setIsCheckingIn(false);
+      } else {
+        console.error('Failed to start check-in');
+      }
+    } catch (error) {
+      console.error('Error starting check-in:', error);
+    }
+  };
+
+  // Handle ending a check-in
+  const handleEndCheckIn = async () => {
+    try {
+      const response = await fetch('/api/safety/check-in', {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setCheckIn(null);
+      } else {
+        console.error('Failed to end check-in');
+      }
+    } catch (error) {
+      console.error('Error ending check-in:', error);
+    }
+  };
+
+  // Handle adding a new contact
+  const handleAddContact = async (name: string, phone: string) => {
+    try {
+      const response = await fetch('/api/safety/trusted-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone }),
+      });
+
+      if (response.ok) {
+        const newContact = await response.json();
+        setTrustedContacts([...trustedContacts, newContact]);
+        setIsAddingContact(false);
+      } else {
+        console.error('Failed to add trusted contact');
+      }
+    } catch (error) {
+      console.error('Error adding trusted contact:', error);
+    }
+  };
+
+  // Handle removing a contact
+  const handleRemoveContact = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this trusted contact?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/safety/trusted-contacts/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setTrustedContacts(trustedContacts.filter((contact) => contact.id !== id));
+      } else {
+        console.error('Failed to remove trusted contact');
+      }
+    } catch (error) {
+      console.error('Error removing trusted contact:', error);
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Safety Score */}
+      {/* Safety Score Card... */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -43,17 +165,25 @@ export default function SafetyMode() {
             </div>
             <div className="flex items-center justify-between">
               <span>Trusted contacts added</span>
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              {trustedContacts.length > 0 ? (
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              ) : (
+                <Badge variant="outline"> +10 points available</Badge>
+              )}
             </div>
             <div className="flex items-center justify-between">
               <span>Check-in feature used</span>
-              <Badge variant="outline">+5 points available</Badge>
+              {checkIn ? (
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              ) : (
+                <Badge variant="outline">+5 points available</Badge>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Check-In Feature */}
+      {/* Check-In Feature Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -65,11 +195,13 @@ export default function SafetyMode() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isCheckedIn ? (
+          {isCheckingIn ? (
+            <CheckInForm onCheckIn={handleStartCheckIn} onCancel={() => setIsCheckingIn(false)} />
+          ) : checkIn ? (
             <Alert className="mb-4">
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
-                You're checked in at Downtown Cafe until 5:00 PM today. Your trusted contacts will be notified if you don't check out on time.
+                You're checked in at {checkIn.location} until {new Date(checkIn.endTime).toLocaleTimeString()}. Your trusted contacts will be notified if you don't check out on time.
               </AlertDescription>
             </Alert>
           ) : (
@@ -80,20 +212,22 @@ export default function SafetyMode() {
               </AlertDescription>
             </Alert>
           )}
-          
-          <div className="space-y-4">
-            <Button 
-              className="w-full" 
-              variant={isCheckedIn ? "outline" : "default"}
-              onClick={handleCheckIn}
-            >
-              {isCheckedIn ? "Update Check-In" : "Start Check-In"}
-            </Button>
-          </div>
+
+          {!isCheckingIn && (
+            <div className="space-y-4">
+              <Button
+                className="w-full"
+                variant={checkIn ? "outline" : "default"}
+                onClick={() => (checkIn ? handleEndCheckIn() : setIsCheckingIn(true))}
+              >
+                {checkIn ? "End Check-In" : "Start Check-In"}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Panic Button */}
+      {/* Panic Button Card... */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -106,9 +240,9 @@ export default function SafetyMode() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Button 
-              variant="destructive" 
-              size="lg" 
+            <Button
+              variant="destructive"
+              size="lg"
               className="w-full"
               onClick={handlePanicButton}
             >
@@ -122,7 +256,7 @@ export default function SafetyMode() {
         </CardContent>
       </Card>
 
-      {/* Trusted Contacts */}
+      {/* Trusted Contacts Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -134,22 +268,33 @@ export default function SafetyMode() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {trustedContacts.map((contact, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <p className="font-medium">{contact.name}</p>
-                  <p className="text-sm text-gray-600">{contact.phone}</p>
+          {isAddingContact ? (
+            <AddTrustedContactForm onAdd={handleAddContact} onCancel={() => setIsAddingContact(false)} />
+          ) : (
+            <div className="space-y-3">
+              {trustedContacts.map((contact) => (
+                <div key={contact.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">{contact.name}</p>
+                    <p className="text-sm text-gray-600">{contact.phone}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {contact.verified ? (
+                      <Badge className="bg-green-100 text-green-800">Verified</Badge>
+                    ) : (
+                      <Badge variant="outline">Pending</Badge>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => handleRemoveContact(contact.id)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                {contact.verified && (
-                  <Badge className="bg-green-100 text-green-800">Verified</Badge>
-                )}
-              </div>
-            ))}
-            <Button variant="outline" className="w-full">
-              Add Trusted Contact
-            </Button>
-          </div>
+              ))}
+              <Button variant="outline" className="w-full" onClick={() => setIsAddingContact(true)}>
+                Add Trusted Contact
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

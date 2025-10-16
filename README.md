@@ -1,10 +1,10 @@
-# HotMatch 🔥
+# HydraSpark 🔥
 
 **Swipe. Vibe. Connect. The dating platform that matches your energy.**
 
-HotMatch is a next-gen dating platform that combines addictive swiping, AI-powered vibe matching, and a robust verification system to create meaningful, safe, and fun connections.
+ HydraSpark is a next-gen dating platform that combines addictive swiping, AI-powered vibe matching, and a robust verification system to create meaningful, safe, and fun connections.
 
-![HotMatch Logo](https://via.placeholder.com/150/0000FF/FFFFFF?text=HotMatch) *(Replace with your logo!)*
+![HydraSpark Logo](https://via.placeholder.com/150/0000FF/FFFFFF?text=HotMatch) *(Replace with your logo!)*
 
 ---
 
