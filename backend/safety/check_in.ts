@@ -1,5 +1,5 @@
 
-import { SQL } from "encore.dev/storage/sql";
+import { api } from "encore.dev/api";
 
 // Represents a user's check-in status
 interface CheckIn {
@@ -15,20 +15,42 @@ interface StartCheckInParams {
   duration: number; // in minutes
 }
 
-export async function StartCheckIn(params: StartCheckInParams): Promise<CheckIn> {
-  const endTime = new Date(new Date().getTime() + params.duration * 60000);
-  currentCheckIn = {
-    location: params.location,
-    endTime: endTime.toISOString(),
-  };
-  return currentCheckIn;
-}
+export const createCheckIn = api<StartCheckInParams, CheckIn>(
+    {
+        method: "POST",
+        path: "/safety/check-in",
+    },
+    async (params) => {
+        const endTime = new Date(new Date().getTime() + params.duration * 60000);
+        currentCheckIn = {
+            location: params.location,
+            endTime: endTime.toISOString(),
+        };
+        return currentCheckIn;
+    }
+);
+
+export const getCheckIns = api<{}, { checkIn: CheckIn | null }>(
+    {
+        method: "GET",
+        path: "/safety/check-in",
+    },
+    async () => {
+        return { checkIn: currentCheckIn };
+    }
+);
+
+export const completeCheckIn = api<{}, { success: boolean }>(
+    {
+        method: "DELETE",
+        path: "/safety/check-in",
+    },
+    async () => {
+        currentCheckIn = null;
+        return { success: true };
+    }
+);
 
 export async function GetCheckIn(): Promise<{ checkIn: CheckIn | null }> {
   return { checkIn: currentCheckIn };
-}
-
-export async function EndCheckIn(): Promise<{ success: boolean }> {
-  currentCheckIn = null;
-  return { success: true };
 }

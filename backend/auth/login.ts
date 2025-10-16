@@ -16,15 +16,15 @@ interface LoginResponse {
 }
 
 // Handles user login.
-export const login = api.v1<LoginRequest, LoginResponse>(
+export const login = api<LoginRequest, LoginResponse>(
   {
     expose: true,
     method: "POST",
     path: "/auth/login",
   },
-  async ({ email, password }) => {
+  async ({ email, password }: LoginRequest) => {
     const user = await authDB.queryRow`
-      SELECT id, password, is_active FROM users WHERE email = ${email}
+      SELECT id, password_hash, is_active FROM users WHERE email = ${email}
     `;
 
     if (!user) {
@@ -35,7 +35,7 @@ export const login = api.v1<LoginRequest, LoginResponse>(
       throw APIError.permissionDenied("This account has been deactivated.");
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
       throw APIError.unauthenticated("Invalid email or password");
     }

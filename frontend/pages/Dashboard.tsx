@@ -12,6 +12,7 @@ import SafetyMode from '../components/dashboard/SafetyMode';
 import ProfileSettings from '../components/dashboard/ProfileSettings';
 import GroupList from '../components/community/GroupList';
 import EventManagement from '../components/events/EventManagement';
+import logo from '../assets/logo.png';
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -27,7 +28,7 @@ function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <Zap className="h-8 w-8 text-blue-600" />
+              <img src={logo} alt="HydraSpark Logo" className="h-8 w-auto" />
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-magenta-600 to-cyan-600 bg-clip-text text-transparent">
                 HydraSpark
               </span>

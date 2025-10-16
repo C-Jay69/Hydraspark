@@ -29,9 +29,18 @@ export interface ProfileResponse {
   vibeAnswers?: Record<string, string>;
 }
 
+// Defines the request shape for getProfile.
+interface GetProfileParams {
+    userId: string;
+}
+
 // Gets the current user's profile.
-export const getProfile = api.v1.get("/auth/profile/:userId",
-  async ({ userId } : { userId: string }): Promise<ProfileResponse> => {
+export const getProfile = api<GetProfileParams, ProfileResponse>(
+  {
+    method: "GET",
+    path: "/auth/profile/:userId",
+  },
+  async ({ userId }): Promise<ProfileResponse> => {
     const user = await authDB.queryRow<{
       id: string;
       email: string;
@@ -78,71 +87,68 @@ export const getProfile = api.v1.get("/auth/profile/:userId",
 );
 
 // Updates the current user's profile.
-export const updateProfile = api.v1.put<UpdateProfileRequest & { userId: string }, ProfileResponse>("/auth/profile/:userId",
-  async ({ userId, ...updates }) => {
-    const updateFields: string[] = [];
-    const values: any[] = [];
+export const updateProfile = api<UpdateProfileRequest & { userId: string }, ProfileResponse>(
+    {
+        method: "PUT",
+        path: "/auth/profile/:userId",
+    },
+    async ({ userId, ...updates }) => {
+        const currentUser = await authDB.queryRow`
+            SELECT bio, interests, modes, city, location_lat, location_lng, vibe_answers
+            FROM users
+            WHERE id = ${userId}
+        `;
 
-    if (updates.bio !== undefined) {
-      updateFields.push(`bio = $${values.length + 1}`);
-      values.push(updates.bio);
-    }
-    if (updates.interests !== undefined) {
-      updateFields.push(`interests = $${values.length + 1}`);
-      values.push(updates.interests);
-    }
-    if (updates.modes !== undefined) {
-      updateFields.push(`modes = $${values.length + 1}`);
-      values.push(updates.modes);
-    }
-    if (updates.city !== undefined) {
-      updateFields.push(`city = $${values.length + 1}`);
-      values.push(updates.city);
-    }
-    if (updates.locationLat !== undefined && updates.locationLng !== undefined) {
-      updateFields.push(`location_lat = $${values.length + 1}`, `location_lng = $${values.length + 2}`);
-      values.push(updates.locationLat, updates.locationLng);
-    }
-    if (updates.vibeAnswers !== undefined) {
-      updateFields.push(`vibe_answers = $${values.length + 1}`);
-      values.push(JSON.stringify(updates.vibeAnswers));
-    }
+        if (!currentUser) {
+            throw APIError.notFound("User not found");
+        }
 
-    if (updateFields.length === 0) { 
-      throw APIError.invalidArgument("No fields to update");
+        const vibeAnswersUpdate = updates.vibeAnswers ? JSON.stringify(updates.vibeAnswers) : currentUser.vibe_answers;
+
+        await authDB.query`
+            UPDATE users
+            SET 
+                bio = ${updates.bio !== undefined ? updates.bio : currentUser.bio},
+                interests = ${updates.interests !== undefined ? updates.interests : currentUser.interests},
+                modes = ${updates.modes !== undefined ? updates.modes : currentUser.modes},
+                city = ${updates.city !== undefined ? updates.city : currentUser.city},
+                location_lat = ${updates.locationLat !== undefined ? updates.locationLat : currentUser.location_lat},
+                location_lng = ${updates.locationLng !== undefined ? updates.locationLng : currentUser.location_lng},
+                vibe_answers = ${vibeAnswersUpdate},
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${userId}
+        `;
+
+        return getProfile({ userId });
     }
-    
-    updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
-
-    await authDB.query(
-      `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${values.length + 1}`,
-      ...values, userId
-    );
-
-    return getProfile({ userId });
-  }
 );
 
-// Gets all vibe questions for profile setup.
-export const getVibeQuestions = api.v1.get("/auth/vibe-questions",
-  async (): Promise<{ questions: Array<{
+interface VibeQuestion {
     id: number;
     question: string;
     options: string[];
     category: string;
-  }> }> => {
-    const questions = await authDB.query<{
-      id: number;
-      question: string;
-      options: string[];
-      category: string;
-    }>`
-      SELECT id, question, options, category
-      FROM vibe_questions
-      WHERE is_active = true
-      ORDER BY category, id
-    `;
+}
 
-    return { questions };
-  }
+// Gets all vibe questions for profile setup.
+export const getVibeQuestions = api<{}, { questions: VibeQuestion[] }>( 
+    {
+        method: "GET",
+        path: "/auth/vibe-questions",
+    },
+    async () => {
+        const questionRows = authDB.query<VibeQuestion>`
+            SELECT id, question, options, category
+            FROM vibe_questions
+            WHERE is_active = true
+            ORDER BY category, id
+        `;
+
+        const questions: VibeQuestion[] = [];
+        for await (const row of questionRows) {
+            questions.push(row);
+        }
+
+        return { questions };
+    }
 );

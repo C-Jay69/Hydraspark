@@ -1,6 +1,5 @@
 
 import SignUpForm from '@/components/auth/SignUpForm';
-import Link from 'next/link';
 
 export default function SignUpPage() {
   return (
@@ -13,10 +12,10 @@ export default function SignUpPage() {
         <SignUpForm />
         <div className="text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Already have an account?{' ']}
-            <Link href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-500">
+            Already have an account?{' '}
+            <a href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-500">
               Sign in
-            </Link>
+            </a>
           </p>
         </div>
       </div>

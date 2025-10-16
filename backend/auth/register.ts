@@ -23,13 +23,13 @@ export interface RegisterResponse {
 }
 
 // Registers a new user account.
-export const register = api.v1<RegisterRequest, RegisterResponse>(
+export const register = api<RegisterRequest, RegisterResponse>(
   {
     expose: true,
     method: "POST",
     path: "/auth/register",
   },
-  async (req) => {
+  async (req: RegisterRequest) => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(req.email)) {
@@ -58,6 +58,10 @@ export const register = api.v1<RegisterRequest, RegisterResponse>(
       VALUES (${req.email}, ${hashedPassword}, ${req.firstName}, ${req.lastName}, ${req.dateOfBirth}, ${req.gender}, ${req.phone})
       RETURNING id, email, first_name, last_name
     `;
+
+    if (!user) {
+      throw APIError.internal("Failed to create user");
+    }
 
     return {
       user: {
