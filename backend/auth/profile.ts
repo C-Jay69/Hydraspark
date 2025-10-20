@@ -1,6 +1,7 @@
 
 import { api, APIError } from "encore.dev/api";
 import { authDB } from "./db";
+import { indexUser } from "../search";
 
 export interface UpdateProfileRequest {
   bio?: string;
@@ -119,7 +120,10 @@ export const updateProfile = api<UpdateProfileRequest & { userId: string }, Prof
             WHERE id = ${userId}
         `;
 
-        return getProfile({ userId });
+        const updatedProfile = await getProfile({ userId });
+        // Index the updated user profile in Typesense
+        await indexUser(updatedProfile);
+        return updatedProfile;
     }
 );
 

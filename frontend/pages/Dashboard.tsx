@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '../contexts/AuthContext';
 import { Heart, Users, Shield, Settings, Zap, MessageCircle, Calendar, TrendingUp } from 'lucide-react';
 import DatingMode from '../components/dashboard/DatingMode';
-import FriendMode from '../components/dashboard/FriendMode';
+import { Search } from '../components/search/Search';
 import SafetyMode from '../components/dashboard/SafetyMode';
 import ProfileSettings from '../components/dashboard/ProfileSettings';
 import GroupList from '../components/community/GroupList';
@@ -143,7 +143,7 @@ function Dashboard() {
           </TabsContent>
 
           <TabsContent value="friend" className="space-y-6">
-            <FriendMode />
+            <Search />
           </TabsContent>
 
           <TabsContent value="community" className="space-y-6">

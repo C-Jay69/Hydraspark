@@ -2,6 +2,8 @@
 import { api, APIError } from "encore.dev/api";
 import { authDB } from "./db";
 import bcrypt from "bcryptjs";
+import { indexUser } from "../search";
+import { getProfile } from "./profile";
 
 export interface RegisterRequest {
   email: string;
@@ -62,6 +64,10 @@ export const register = api<RegisterRequest, RegisterResponse>(
     if (!user) {
       throw APIError.internal("Failed to create user");
     }
+
+    // Index the new user in Typesense
+    const userProfile = await getProfile({ userId: user.id });
+    await indexUser(userProfile);
 
     return {
       user: {

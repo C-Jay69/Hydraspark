@@ -1,0 +1,7 @@
+- [x] User authentication
+- [x] User profiles
+- [x] Real-time chat
+- [ ] Search functionality
+- [ ] Unit tests
+- [ ] End-to-end tests
+- [ ] Deployment
