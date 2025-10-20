@@ -11,7 +11,6 @@
         "@sentry/node": "^10.5.0",
         "@types/node": "^24.8.0",
         "bcryptjs": "^3.0.2",
-        "encore.dev": "^1.50.6",
         "jose": "^6.1.0",
         "jsonwebtoken": "^9.0.2",
         "typesense": "^2.1.0",
@@ -488,8 +487,6 @@
     "ecdsa-sig-formatter": ["ecdsa-sig-formatter@1.0.11", "", { "dependencies": { "safe-buffer": "^5.0.1" } }, "sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ=="],
 
     "electron-to-chromium": ["electron-to-chromium@1.5.230", "", {}, "sha512-A6A6Fd3+gMdaed9wX83CvHYJb4UuapPD5X5SLq72VZJzxHSY0/LUweGXRWmQlh2ln7KV7iw7jnwXK7dlPoOnHQ=="],
-
-    "encore.dev": ["encore.dev@1.50.6", "", {}, "sha512-pTsG3L9wfJJxmBOSZnLDtAL3ezdZn9tOcrJOq1de+VFYE1C2oCM/iHjv3vjXhM8ELml2zdvjnUlL47Et2kZKaw=="],
 
     "enhanced-resolve": ["enhanced-resolve@5.18.3", "", { "dependencies": { "graceful-fs": "^4.2.4", "tapable": "^2.2.0" } }, "sha512-d4lC8xfavMeBjzGr2vECC3fsGXziXZQyJxD868h2M/mBI3PwAuODxAkLkq5HYuvrPYcUtiLzsTo8U3PgX3Ocww=="],
 
